@@ -1,0 +1,915 @@
+﻿<Window
+    x:Class="Airlines.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:behaviors="clr-namespace:Airlines.Behaviors"
+    xmlns:converters="clr-namespace:Airlines.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+    xmlns:local="clr-namespace:Airlines"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:mdix="http://materialdesigninxaml.net/winfx/xaml/themes"
+    xmlns:styles="clr-namespace:Airlines.Styles"
+    xmlns:system="clr-namespace:System;assembly=mscorlib"
+    xmlns:viewmodels="clr-namespace:Airlines.ViewModels"
+    xmlns:views="clr-namespace:Airlines.Views"
+    Title="{Binding SelectedAirline.Title, StringFormat={}Авиакомпания «{0}»}"
+    Width="1120"
+    Height="720"
+    MinWidth="880"
+    MinHeight="720"
+    behaviors:WindowEx.ShowMaximizeButton="True"
+    behaviors:WindowEx.ShowMinimizeButton="True"
+    mdix:RippleAssist.IsDisabled="{Binding IsChecked, ElementName=DisableRipplesMenuItem}"
+    mdix:TransitionAssist.DisableTransitions="{Binding IsChecked, ElementName=DisableTransitionsMenuItem}"
+    Background="{DynamicResource MaterialDesignPaper}"
+    FontFamily="{DynamicResource MaterialDesignFont}"
+    Icon="Resources/Images/plane.png"
+    Style="{StaticResource MaterialDesignWindow}"
+    TextElement.FontSize="13"
+    TextElement.FontWeight="Regular"
+    TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+    TextOptions.TextFormattingMode="Ideal"
+    TextOptions.TextRenderingMode="Auto"
+    UseLayoutRounding="True"
+    WindowStartupLocation="CenterScreen"
+    WindowState="{Binding WindowState}"
+    mc:Ignorable="d">
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.PopupBox.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- Конвертеры -->
+            <converters:FilePathToSiteOfOriginUriConverter x:Key="FilePathToSiteOfOriginUriConverter"/>
+            <converters:InverseAndBooleansToBooleanConverter x:Key="InverseAndBooleansToBooleanConverter"/>
+            <converters:ValueToEqualsParameterConverter x:Key="ValueToEqualsParameterConverter"/>
+            <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
+
+            <!-- DataTemplate для вывода самолета -->
+            <DataTemplate x:Key="AirplaneCardDataTemplate">
+                <mdix:Card UseLayoutRounding="True">
+                    <Grid Width="250">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="140"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="38"/>
+                        </Grid.RowDefinitions>
+
+                        <Image
+                            Grid.Row="0"
+                            Margin="-1"
+                            Source="{Binding PhotoFileName, Converter={StaticResource FilePathToSiteOfOriginUriConverter}, ConverterParameter=Data/Airplanes, TargetNullValue=Data/Airplanes/default.png}"
+                            Stretch="UniformToFill"/>
+
+                        <Button
+                            Grid.Row="0"
+                            Grid.RowSpan="2"
+                            Margin="0,0,8,28"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Bottom"
+                            Command="{Binding DataContext.ShowAirplaneVideoWindowCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                            IsEnabled="{Binding VideoFileName, TargetNullValue=False}"
+                            Style="{StaticResource MaterialDesignFloatingActionMiniAccentButton}">
+                            <mdix:PackIcon Kind="Videocam"/>
+                        </Button>
+
+                        <StackPanel Grid.Row="1" Orientation="Horizontal">
+                            <Button
+                                Width="30"
+                                Height="30"
+                                Margin="6,16,2,2"
+                                HorizontalAlignment="Right"
+                                mdix:RippleAssist.IsCentered="True"
+                                Style="{StaticResource MaterialDesignToolForegroundButton}">
+                                <mdix:PackIcon Kind="Airplane"/>
+                            </Button>
+
+                            <!-- Благодаря Viewbox текст сжимается, если не влазит в заданные рамки -->
+                            <Viewbox
+                                Height="30"
+                                MaxWidth="200"
+                                Margin="0,16,0,2"
+                                HorizontalAlignment="Left"
+                                StretchDirection="DownOnly">
+                                <TextBlock Style="{StaticResource MaterialDesignHeadline5TextBlock}" Text="{Binding Name}"/>
+                            </Viewbox>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="2" Orientation="Horizontal">
+                            <Button
+                                Width="30"
+                                Height="30"
+                                Margin="6,-5,2,0"
+                                HorizontalAlignment="Right"
+                                mdix:RippleAssist.IsCentered="True"
+                                Style="{StaticResource MaterialDesignToolForegroundButton}">
+                                <mdix:PackIcon Kind="Identifier"/>
+                            </Button>
+
+                            <TextBlock Style="{StaticResource MaterialDesignSubtitle1TextBlock}" Text="{Binding RegNumber}"/>
+                        </StackPanel>
+
+                        <Separator
+                            Grid.Row="3"
+                            Margin="10,0"
+                            VerticalAlignment="Bottom"
+                            Style="{StaticResource MaterialDesignSeparator}"/>
+
+                        <Button
+                            Grid.Row="4"
+                            Width="120"
+                            VerticalAlignment="Top"
+                            Command="{Binding DataContext.ShowAirplaneDetailsDialogCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                            CommandParameter="{Binding}"
+                            Content="ПОДРОБНЕЕ"
+                            Style="{StaticResource MaterialDesignFlatButton}"/>
+
+                        <mdix:PopupBox
+                            Grid.Row="4"
+                            Margin="0,3,0,0"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Top">
+                            <StackPanel>
+                                <Button Command="{Binding DataContext.ShowAirplaneDetailsDialogCommand, RelativeSource={RelativeSource AncestorType=ListBox}}" CommandParameter="{Binding}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <mdix:PackIcon Kind="InfoCircle"/>
+                                        <TextBlock Margin="10,0,0,0" Text="Подробнее"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <Button Command="{Binding DataContext.ShowAirplaneEditDialogCommand, RelativeSource={RelativeSource AncestorType=ListBox}}" CommandParameter="{Binding}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <mdix:PackIcon Kind="Edit"/>
+                                        <TextBlock Margin="10,0,0,0" Text="Редактировать"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <Button Command="{Binding DataContext.RemoveAirplaneCommand, RelativeSource={RelativeSource AncestorType=ListBox}}" CommandParameter="{Binding}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <mdix:PackIcon Kind="RemoveCircle"/>
+                                        <TextBlock Margin="10,0,0,0" Text="Удалить"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </mdix:PopupBox>
+                    </Grid>
+                </mdix:Card>
+            </DataTemplate>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <!-- Диалог для вывода строки и выбора "Да" или "Нет" -->
+    <!-- Диалог для подверждения создан в самом корне, чтобы его можно было запускать поверх диалога с данными -->
+    <mdix:DialogHost
+        CloseOnClickAway="True"
+        Identifier="ConfirmationDialog"
+        Style="{DynamicResource MaterialDesignEmbeddedDialogHost}">
+
+        <!-- Шаблон диалога для запроса подтверждения. -->
+        <!-- Передается String -->
+        <mdix:DialogHost.DialogContentTemplate>
+            <DataTemplate DataType="system:String">
+                <views:ConfirmationDialog/>
+            </DataTemplate>
+        </mdix:DialogHost.DialogContentTemplate>
+
+        <!-- Диалог для вывода заданных UserControl'ов -->
+        <!-- Привязка UserControl к ViewModel находится внутри App.xaml -->
+        <mdix:DialogHost
+            Identifier="RootDialog"
+            IsOpen="{Binding IsRootDialogOpened, Mode=TwoWay}"
+            Style="{DynamicResource MaterialDesignEmbeddedDialogHost}">
+
+            <!-- Шаблон диалога для вывода данных -->
+            <!-- Передается определенная ViewModel, связанная со View в App.xaml -->
+            <mdix:DialogHost.DialogContentTemplate>
+                <DataTemplate>
+                    <ContentControl Content="{Binding}"/>
+                </DataTemplate>
+            </mdix:DialogHost.DialogContentTemplate>
+
+            <!-- Основной Grid -->
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="56"/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+
+                <ScrollViewer
+                    Grid.Row="2"
+                    Grid.ColumnSpan="2"
+                    CanContentScroll="True"
+                    HorizontalScrollBarVisibility="Disabled"
+                    VerticalScrollBarVisibility="Auto">
+
+                    <!-- ListBox в который выводится коллекция самолетов -->
+                    <ListBox
+                        x:Name="AirplanesListBox"
+                        HorizontalAlignment="Center"
+                        BorderThickness="0"
+                        ItemTemplate="{StaticResource AirplaneCardDataTemplate}"
+                        ItemsSource="{Binding SelectedAirline.Airplanes, UpdateSourceTrigger=PropertyChanged}"
+                        SelectedIndex="0"
+                        SelectedItem="{Binding SelectedAirplane, Mode=TwoWay}"
+                        VirtualizingStackPanel.IsVirtualizing="True"
+                        VirtualizingStackPanel.VirtualizationMode="Recycling">
+
+                        <ListBox.Template>
+                            <ControlTemplate>
+                                <!-- Пустой шаблон, чтобы ScrollViewer мог перехватывать прокрутку мыши -->
+                                <ItemsPresenter/>
+                            </ControlTemplate>
+                        </ListBox.Template>
+
+                        <!-- Выбор элемента -->
+                        <ListBox.ItemContainerStyle>
+                            <Style BasedOn="{StaticResource MaterialDesignListBoxItem}" TargetType="ListBoxItem">
+                                <Style.Triggers>
+                                    <Trigger Property="IsKeyboardFocusWithin" Value="true">
+                                        <Setter Property="IsSelected" Value="true"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+
+                        <i:Interaction.Triggers>
+                            <i:EventTrigger EventName="MouseDoubleClick">
+                                <i:InvokeCommandAction Command="{Binding ShowAirplaneDetailsDialogCommand}" CommandParameter="{Binding SelectedAirplane}"/>
+                            </i:EventTrigger>
+                        </i:Interaction.Triggers>
+
+                        <ListBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
+                    </ListBox>
+                </ScrollViewer>
+
+                <!-- TextBlock с сообщением, что у авиакомпании нет самолетов -->
+                <TextBlock
+                    x:Name="NoPlanesTextBlock"
+                    Grid.Row="2"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    FontStyle="Italic"
+                    TextWrapping="Wrap">
+
+                    <TextBlock.Style>
+                        <Style BasedOn="{StaticResource MaterialDesignHeadline4TextBlock}" TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Hidden"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedAirline.Airplanes.Count}" Value="0">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+
+                    <Run>У данной авиакомпании нет самолетов.</Run>
+                    <LineBreak/>
+                    <Run>Вы можете</Run>
+                    <Hyperlink Command="{Binding ShowAirplaneAddDialogCommand}" FontWeight="Bold">
+                        добавить новый самолет.
+                    </Hyperlink>
+                </TextBlock>
+
+                <!-- TextBlock с сообщением, что в приложении нет авиакомпаний -->
+                <TextBlock
+                    x:Name="NoAirlinesTextBlock"
+                    Grid.Row="2"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    FontStyle="Italic"
+                    TextWrapping="Wrap">
+
+                    <TextBlock.Style>
+                        <Style BasedOn="{StaticResource MaterialDesignHeadline4TextBlock}" TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Hidden"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Airlines.Count}" Value="0">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+
+                    <Run>В приложении нет авиакомпаний.</Run>
+                    <LineBreak/>
+                    <Run>Вы можете</Run>
+                    <Hyperlink Command="{Binding ShowAirlineAddDialogCommand}" FontWeight="Bold">
+                        добавить компанию,
+                    </Hyperlink>
+                    <LineBreak/>
+                    <Run>либо</Run>
+                    <Hyperlink Command="{Binding UploadDataFromFileCommand}" FontWeight="Bold">
+                        загрузить данные из файла.
+                    </Hyperlink>
+                </TextBlock>
+
+                <!-- TextBlock с сообщением, что нет подходящих самолетов -->
+                <TextBlock
+                    x:Name="NoAirplanesAfterFilteringTextBlock"
+                    Grid.Row="2"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    FontStyle="Italic"
+                    TextWrapping="Wrap">
+
+                    <TextBlock.Style>
+                        <Style BasedOn="{StaticResource MaterialDesignHeadline4TextBlock}" TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Hidden"/>
+                            <Style.Triggers>
+                                <MultiDataTrigger>
+                                    <!-- Условия -->
+                                    <MultiDataTrigger.Conditions>
+                                        <!-- Кол-во самолетов в ListBox'е равно нулю -->
+                                        <Condition Binding="{Binding ElementName=AirplanesListBox, Path=Items.Count}" Value="0"/>
+
+                                        <!-- Кол-во самолетов в коллекции не равно нулю -->
+                                        <!-- Используется конвертер, для создания условия вида "X не равно Y" -->
+                                        <Condition>
+                                            <Condition.Binding>
+                                                <Binding Converter="{StaticResource ValueToEqualsParameterConverter}" Path="SelectedAirline.Airplanes.Count">
+                                                    <Binding.ConverterParameter>
+                                                        <system:Int32>0</system:Int32>
+                                                    </Binding.ConverterParameter>
+                                                </Binding>
+                                            </Condition.Binding>
+                                            <Condition.Value>
+                                                <system:Boolean>False</system:Boolean>
+                                            </Condition.Value>
+                                        </Condition>
+                                    </MultiDataTrigger.Conditions>
+
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+
+                    <Run>Самолетов с заданными свойствами нет.</Run>
+                    <LineBreak/>
+                    <Run>Вы можете</Run>
+                    <Hyperlink Command="{Binding ShowFilterPopupBox}" FontWeight="Bold">
+                        изменить параметры фильтрации.
+                    </Hyperlink>
+                </TextBlock>
+
+                <!-- Основой ToolBar -->
+                <ToolBar
+                    Grid.Row="1"
+                    ClipToBounds="False"
+                    Focusable="False"
+                    Style="{DynamicResource MaterialDesignToolBar}">
+
+                    <Button
+                        Command="{Binding SaveDataToFileCommand}"
+                        ToolBar.OverflowMode="AsNeeded"
+                        ToolTip="Сохранить данные">
+                        <mdix:PackIcon Kind="ContentSave"/>
+                    </Button>
+
+                    <Separator/>
+
+                    <!-- Выбор авиакомпании -->
+                    <Label
+                        VerticalAlignment="Center"
+                        Content="Авиакомпания:"
+                        FontSize="18"
+                        FontWeight="Bold"/>
+
+                    <ComboBox
+                        DisplayMemberPath="Title"
+                        FontSize="18"
+                        ItemsSource="{Binding Airlines, Mode=TwoWay}"
+                        SelectedItem="{Binding SelectedAirline, Mode=TwoWay}"/>
+
+                    <Button
+                        Command="{Binding ShowAirlineDetailsDialogCommand}"
+                        CommandParameter="{Binding SelectedAirline}"
+                        ToolBar.OverflowMode="AsNeeded"
+                        ToolTip="Информация о авиакомпании">
+                        <mdix:PackIcon Kind="InfoCircle"/>
+                    </Button>
+
+                    <!-- Мне кажется, эти кнопки здесь лишние, но пускай на вский случай лежат -->
+                    <!--<Button Command="{Binding ShowAirlineEditDialogCommand}"
+                            CommandParameter="{Binding SelectedAirline}"
+                            ToolBar.OverflowMode="AsNeeded"
+                            ToolTip="Редактировать информацию о авиакомпании">
+                        <mdix:PackIcon Kind="Edit" />
+                    </Button>
+                    <Button Command="{Binding ShowAirlineAddDialogCommand}"
+                            ToolBar.OverflowMode="AsNeeded"
+                            ToolTip="Добавление новой авиакомпании">
+                        <mdix:PackIcon Kind="AddBox" />
+                    </Button>-->
+
+                    <Separator/>
+
+                    <!-- PopupBox с настройками фильтра -->
+                    <mdix:PopupBox
+                        mdix:RippleAssist.RippleSizeMultiplier="0.5"
+                        IsPopupOpen="{Binding IsFilterPopupBoxOpen, Mode=TwoWay}"
+                        PlacementMode="BottomAndAlignCentres"
+                        StaysOpen="True">
+                        <mdix:PopupBox.ToggleContent>
+                            <StackPanel>
+                                <Label
+                                    VerticalAlignment="Center"
+                                    Content="Фильтр"
+                                    FontSize="18"
+                                    FontWeight="Bold"/>
+                                <mdix:PackIcon
+                                    Margin="0,-10,0,0"
+                                    HorizontalAlignment="Center"
+                                    Foreground="{DynamicResource MaterialDesignBody}"
+                                    Kind="MenuDown"/>
+                            </StackPanel>
+                        </mdix:PopupBox.ToggleContent>
+
+                        <StackPanel Width="350" Margin="8">
+
+                            <TextBlock
+                                Margin="8"
+                                Style="{StaticResource MaterialDesignHeadline5TextBlock}"
+                                Text="ФИЛЬТР"/>
+
+                            <GroupBox
+                                Margin="8"
+                                BorderThickness="0"
+                                Header="Диапазон значений">
+                                <Grid Margin="0,4,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBox
+                                        x:Name="FilterFromValueTextBox"
+                                        Grid.Column="0"
+                                        VerticalContentAlignment="Center"
+                                        mdix:HintAssist.Hint="От"
+                                        mdix:TextFieldAssist.HasClearButton="True"
+                                        FontSize="18"
+                                        Style="{StaticResource MaterialDesignFilledTextFieldTextBox}"
+                                        Text="{Binding FilterFromValue, ValidatesOnDataErrors=True, UpdateSourceTrigger=PropertyChanged}"
+                                        TextAlignment="Center"/>
+
+                                    <mdix:PackIcon
+                                        Grid.Column="1"
+                                        VerticalAlignment="Center"
+                                        Kind="HorizontalLine"/>
+
+                                    <TextBox
+                                        x:Name="FilterToValueTextBox"
+                                        Grid.Column="2"
+                                        VerticalAlignment="Center"
+                                        VerticalContentAlignment="Center"
+                                        mdix:HintAssist.Hint="До"
+                                        mdix:TextFieldAssist.HasClearButton="True"
+                                        FontSize="18"
+                                        Style="{StaticResource MaterialDesignFilledTextFieldTextBox}"
+                                        Text="{Binding FilterToValue, ValidatesOnDataErrors=True, UpdateSourceTrigger=PropertyChanged}"
+                                        TextAlignment="Center"/>
+                                </Grid>
+                            </GroupBox>
+
+                            <GroupBox
+                                Margin="8"
+                                BorderThickness="0"
+                                Header="Свойство для фильтрации">
+                                <ComboBox
+                                    Margin="0,4,0,0"
+                                    DisplayMemberPath="Value"
+                                    FontSize="18"
+                                    ItemsSource="{Binding FilteredFields}"
+                                    SelectedValue="{Binding SelectedFilterField}"
+                                    SelectedValuePath="Key"/>
+                            </GroupBox>
+
+                            <GroupBox
+                                Margin="8"
+                                BorderThickness="0"
+                                Header="Дополнительные опции">
+                                <StackPanel Margin="0,4,0,0">
+                                    <CheckBox Content="Исключить самолеты без видео" IsChecked="{Binding FilterIsExcludeWithoutVideo}"/>
+                                    <CheckBox Content="Исключить самолеты без фото" IsChecked="{Binding FilterIsExcludeWithoutPhoto}"/>
+                                </StackPanel>
+                            </GroupBox>
+
+                            <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                                <Button
+                                    Command="{Binding FilterCommand}"
+                                    Content="_ПРИМЕНИТЬ"
+                                    FontWeight="Bold">
+                                    <Button.IsEnabled>
+                                        <MultiBinding Converter="{StaticResource InverseAndBooleansToBooleanConverter}" Mode="TwoWay">
+                                            <Binding ElementName="FilterFromValueTextBox" Path="(Validation.HasError)"/>
+                                            <Binding ElementName="FilterToValueTextBox" Path="(Validation.HasError)"/>
+                                        </MultiBinding>
+                                    </Button.IsEnabled>
+                                </Button>
+
+                                <Button
+                                    Command="{Binding ResetFilterCommand}"
+                                    Content="_СБРОСИТЬ"
+                                    FontWeight="Bold"
+                                    Foreground="Red"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </mdix:PopupBox>
+
+                    <Separator/>
+
+                    <!-- PopupBox с настройками сортировки -->
+                    <mdix:PopupBox
+                        mdix:RippleAssist.RippleSizeMultiplier="0.5"
+                        IsPopupOpen="{Binding IsSortPopupBoxOpen, Mode=TwoWay}"
+                        PlacementMode="BottomAndAlignCentres"
+                        StaysOpen="True">
+                        <mdix:PopupBox.ToggleContent>
+                            <StackPanel>
+                                <Label
+                                    VerticalAlignment="Center"
+                                    Content="Сортировка"
+                                    FontSize="18"
+                                    FontWeight="Bold"/>
+
+                                <mdix:PackIcon
+                                    Margin="0,-10,0,0"
+                                    HorizontalAlignment="Center"
+                                    Foreground="{DynamicResource MaterialDesignBody}"
+                                    Kind="MenuDown"/>
+                            </StackPanel>
+                        </mdix:PopupBox.ToggleContent>
+
+                        <StackPanel Width="350" Margin="8">
+
+                            <TextBlock
+                                Margin="8"
+                                Style="{StaticResource MaterialDesignHeadline5TextBlock}"
+                                Text="СОРТИРОВКА"/>
+
+                            <GroupBox
+                                Margin="8"
+                                BorderThickness="0"
+                                Header="Свойство для сортировки">
+                                <ComboBox
+                                    Margin="0,4,0,0"
+                                    DisplayMemberPath="Value"
+                                    FontSize="18"
+                                    ItemsSource="{Binding SortedFields}"
+                                    SelectedValue="{Binding SelectedSortField}"
+                                    SelectedValuePath="Key"/>
+                            </GroupBox>
+
+                            <GroupBox
+                                Margin="8"
+                                BorderThickness="0"
+                                Header="Направление сортировки">
+                                <StackPanel Margin="0,4,0,0" Orientation="Horizontal">
+                                    <RadioButton
+                                        Margin="2"
+                                        Content="ПО ВОЗРАСТАНИЮ"
+                                        IsChecked="True"
+                                        Style="{StaticResource MaterialDesignTabRadioButton}"/>
+
+                                    <RadioButton
+                                        Margin="2"
+                                        Content="ПО УБЫВАНИЮ"
+                                        IsChecked="{Binding IsDescendingSort}"
+                                        Style="{StaticResource MaterialDesignTabRadioButton}"/>
+                                </StackPanel>
+                            </GroupBox>
+
+                            <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                                <Button
+                                    Command="{Binding SortCommand}"
+                                    Content="_ПРИМЕНИТЬ"
+                                    FontWeight="Bold"/>
+
+                                <Button
+                                    Command="{Binding ResetSortCommand}"
+                                    Content="_СБРОСИТЬ"
+                                    FontWeight="Bold"
+                                    Foreground="Red"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </mdix:PopupBox>
+
+                    <Separator/>
+
+                    <!-- PopupBox с итогами -->
+                    <mdix:PopupBox
+                        mdix:RippleAssist.RippleSizeMultiplier="0.5"
+                        IsPopupOpen="{Binding IsResultPopupBoxOpen, Mode=TwoWay}"
+                        PlacementMode="BottomAndAlignCentres"
+                        StaysOpen="True">
+                        <mdix:PopupBox.ToggleContent>
+                            <StackPanel>
+                                <Label
+                                    VerticalAlignment="Center"
+                                    Content="Анализ"
+                                    FontSize="18"
+                                    FontWeight="Bold"/>
+
+                                <mdix:PackIcon
+                                    Margin="0,-10,0,0"
+                                    HorizontalAlignment="Center"
+                                    Foreground="{DynamicResource MaterialDesignBody}"
+                                    Kind="MenuDown"/>
+                            </StackPanel>
+                        </mdix:PopupBox.ToggleContent>
+
+                        <StackPanel Margin="8">
+
+                            <TextBlock
+                                Margin="8"
+                                Style="{StaticResource MaterialDesignHeadline5TextBlock}"
+                                Text="АНАЛИЗ"/>
+
+                            <StackPanel Margin="8,8,8,4" Orientation="Horizontal">
+                                <mdix:PackIcon VerticalAlignment="Center" Kind="Counter"/>
+
+                                <TextBlock
+                                    Margin="4,0,4,0"
+                                    VerticalAlignment="Center"
+                                    Text="Всего самолетов:"/>
+
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                    Text="{Binding SelectedAirline.AirplanesCount, StringFormat={}{0} шт.}"/>
+                            </StackPanel>
+
+                            <StackPanel Margin="8" Orientation="Horizontal">
+                                <mdix:PackIcon VerticalAlignment="Center" Kind="Airbag"/>
+
+                                <TextBlock
+                                    Margin="4,0,4,0"
+                                    VerticalAlignment="Center"
+                                    Text="Общая пассажировместимость:"/>
+
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                    Text="{Binding SelectedAirline.TotalPassengersCount, StringFormat={}{0} чел.}"/>
+                            </StackPanel>
+
+                            <StackPanel Margin="8,4,8,8" Orientation="Horizontal">
+                                <mdix:PackIcon VerticalAlignment="Center" Kind="Luggage"/>
+
+                                <TextBlock
+                                    Margin="4,0,4,0"
+                                    VerticalAlignment="Center"
+                                    Text="Общая грузоподъемность:"/>
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                    Text="{Binding SelectedAirline.TotalTakeoffWeight, StringFormat={}{0} кг.}"/>
+                            </StackPanel>
+
+                            <Button
+                                HorizontalAlignment="Right"
+                                Command="{x:Static mdix:PopupBox.ClosePopupCommand}"
+                                Content="_ОК"
+                                FontWeight="Bold"/>
+                        </StackPanel>
+                    </mdix:PopupBox>
+                </ToolBar>
+
+                <!-- Основное Menu -->
+                <Menu
+                    Grid.Row="0"
+                    Grid.Column="0"
+                    IsMainMenu="True">
+                    <MenuItem Header="_Файл">
+                        <MenuItem Command="{Binding SaveDataToFileCommand}" Header="Сохранить">
+                            <MenuItem.Icon>
+                                <mdix:PackIcon Kind="ContentSave"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+
+                        <MenuItem Command="{Binding SaveDataToFileAsCommand}" Header="Сохранить как.."/>
+
+                        <MenuItem Command="{Binding UploadDataFromFileCommand}" Header="Открыть...">
+                            <MenuItem.Icon>
+                                <mdix:PackIcon Kind="FolderOpen"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+
+                        <MenuItem Command="{x:Static styles:MaterialDesignWindow.Close}" Header="Выход">
+                            <MenuItem.Icon>
+                                <mdix:PackIcon Kind="ExitToApp"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </MenuItem>
+
+                    <MenuItem Header="_Вид">
+                        <MenuItem Header="Тема">
+                            <MenuItem.Icon>
+                                <mdix:PackIcon Kind="ThemeLightDark"/>
+                            </MenuItem.Icon>
+
+                            <MenuItem
+                                Command="{Binding ChangeThemeCommand}"
+                                Header="Светлая"
+                                IsCheckable="True"
+                                IsChecked="{Binding IsLightThemeEnabled, Mode=TwoWay}">
+                                <MenuItem.CommandParameter>
+                                    <system:Boolean>True</system:Boolean>
+                                </MenuItem.CommandParameter>
+                                <MenuItem.Icon>
+                                    <mdix:PackIcon Kind="LightStrip"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+
+                            <MenuItem
+                                Command="{Binding ChangeThemeCommand}"
+                                Header="Темная"
+                                IsCheckable="True"
+                                IsChecked="{Binding IsDarkThemeEnabled, Mode=TwoWay}">
+                                <MenuItem.CommandParameter>
+                                    <system:Boolean>False</system:Boolean>
+                                </MenuItem.CommandParameter>
+                                <MenuItem.Icon>
+                                    <mdix:PackIcon Kind="ThemeLightDark"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                        </MenuItem>
+
+                        <MenuItem
+                            x:Name="DisableTransitionsMenuItem"
+                            Header="Отключить анимации переходов"
+                            IsCheckable="True">
+                            <MenuItem.Icon>
+                                <mdix:PackIcon Kind="Fullscreen"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+
+                        <MenuItem
+                            x:Name="DisableRipplesMenuItem"
+                            Header="Отключить анимации волн"
+                            IsCheckable="True">
+                            <MenuItem.Icon>
+                                <mdix:PackIcon Kind="Fullscreen"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+
+                        <MenuItem Command="{Binding MaximizeWindowCommand}" Header="Во весь экран">
+                            <MenuItem.Icon>
+                                <mdix:PackIcon Kind="Fullscreen"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </MenuItem>
+
+                    <MenuItem Focusable="False" Header="_Редактировать">
+                        <MenuItem Focusable="False" Header="Авиакомпании">
+                            <MenuItem.Icon>
+                                <mdix:PackIcon Kind="Company"/>
+                            </MenuItem.Icon>
+                            <MenuItem
+                                Command="{Binding ShowAirlineAddDialogCommand}"
+                                Focusable="False"
+                                Header="Новая авиакомпания...">
+                                <MenuItem.Icon>
+                                    <mdix:PackIcon Kind="Add"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+
+                            <MenuItem
+                                Command="{Binding ShowAirlineEditDialogCommand}"
+                                CommandParameter="{Binding SelectedAirline}"
+                                Focusable="False"
+                                Header="Редактировать выбранную авиакомпанию">
+                                <MenuItem.Icon>
+                                    <mdix:PackIcon Kind="Edit"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+
+                            <MenuItem
+                                Command="{Binding RemoveAirlineCommand}"
+                                CommandParameter="{Binding SelectedAirline}"
+                                Focusable="False"
+                                Header="Удалить выбранную авиакомпанию">
+                                <MenuItem.Icon>
+                                    <mdix:PackIcon Kind="Remove"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                        </MenuItem>
+                        <MenuItem Focusable="False" Header="Самолеты">
+                            <MenuItem.Icon>
+                                <mdix:PackIcon Kind="Airplane"/>
+                            </MenuItem.Icon>
+
+                            <MenuItem
+                                Command="{Binding ShowAirplaneAddDialogCommand}"
+                                Focusable="False"
+                                Header="Новый самолет..."
+                                IsEnabled="{Binding SelectedAirline, TargetNullValue=False}">
+                                <MenuItem.Icon>
+                                    <mdix:PackIcon Kind="Add"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+
+                            <MenuItem
+                                Command="{Binding ShowAirplaneEditDialogCommand}"
+                                CommandParameter="{Binding SelectedAirplane}"
+                                Focusable="False"
+                                Header="Редактировать выбранный самолет"
+                                IsEnabled="{Binding SelectedAirplane, TargetNullValue=False}">
+                                <MenuItem.Icon>
+                                    <mdix:PackIcon Kind="Edit"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+
+                            <MenuItem
+                                Command="{Binding RemoveAirplaneCommand}"
+                                CommandParameter="{Binding SelectedAirplane}"
+                                Focusable="False"
+                                Header="Удалить выбранный самолет"
+                                IsEnabled="{Binding SelectedItem, ElementName=AirplanesListBox, TargetNullValue=False}">
+                                <MenuItem.Icon>
+                                    <mdix:PackIcon Kind="Remove"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                        </MenuItem>
+                    </MenuItem>
+
+                    <MenuItem Header="_Вывод">
+                        <MenuItem Command="{Binding ShowFilterPopupBoxCommand}" Header="Настроить фильтр">
+                            <MenuItem.Icon>
+                                <mdix:PackIcon Kind="Filter"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+
+                        <MenuItem Command="{Binding ResetFilterCommand}" Header="Сбросить фильтр"/>
+
+                        <Separator/>
+
+                        <MenuItem Command="{Binding ShowSortPopupBoxCommand}" Header="Настроить сортировку">
+                            <MenuItem.Icon>
+                                <mdix:PackIcon Kind="Sort"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+
+                        <MenuItem Command="{Binding ResetSortCommand}" Header="Не сортировать"/>
+
+                        <Separator/>
+
+                        <MenuItem Command="{Binding ShowResultPopupBoxCommand}" Header="Итоги авиакомпании">
+                            <MenuItem.Icon>
+                                <mdix:PackIcon Kind="Apps"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </MenuItem>
+
+                    <MenuItem Header="_Справка">
+                        <MenuItem Command="{Binding ShowAboutProgramDialogCommand}" Header="О приложении...">
+                            <MenuItem.Icon>
+                                <mdix:PackIcon Kind="About"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </MenuItem>
+                </Menu>
+
+                <!-- Кнопка добавления самолета/авиакомпании -->
+                <mdix:PopupBox
+                    Grid.Row="2"
+                    Margin="32"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom"
+                    IsEnabled="{Binding IsRootDialogOpened, Converter={StaticResource InverseBooleanConverter}}"
+                    Style="{StaticResource MaterialDesignMultiFloatingActionPopupBox}">
+                    <StackPanel>
+                        <Button
+                            Background="{DynamicResource PrimaryHueMidBrush}"
+                            Command="{Binding ShowAirlineAddDialogCommand}"
+                            Foreground="{DynamicResource PrimaryHueMidForegroundBrush}"
+                            ToolTip="Добавить новую авиакомпанию">
+                            <mdix:PackIcon Kind="Company"/>
+                        </Button>
+
+                        <Button
+                            Background="{DynamicResource PrimaryHueMidBrush}"
+                            Command="{Binding ShowAirplaneAddDialogCommand}"
+                            Foreground="{DynamicResource PrimaryHueMidForegroundBrush}"
+                            IsEnabled="{Binding SelectedAirline, TargetNullValue=False}"
+                            ToolTip="Добавить новый самолет">
+                            <mdix:PackIcon Kind="Airplane"/>
+                        </Button>
+                    </StackPanel>
+                </mdix:PopupBox>
+            </Grid>
+        </mdix:DialogHost>
+    </mdix:DialogHost>
+</Window>

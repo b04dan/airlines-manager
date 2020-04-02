@@ -1,0 +1,171 @@
+﻿<UserControl
+    x:Class="Airlines.Views.VideoDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:behaviors="clr-namespace:Airlines.Behaviors"
+    xmlns:converters="clr-namespace:Airlines.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+    xmlns:local="clr-namespace:Airlines.Views"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:mdix="http://materialdesigninxaml.net/winfx/xaml/themes"
+    xmlns:system="clr-namespace:System;assembly=mscorlib"
+    xmlns:utils="clr-namespace:Airlines.Utils"
+    d:DesignHeight="540"
+    d:DesignWidth="926"
+    mc:Ignorable="d">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <converters:VolumeToBoolConverter x:Key="VolumeToBoolConverter"/>
+
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="../Styles/BusyAnimationStyle.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid Background="Black">
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition Height="100"/>
+        </Grid.RowDefinitions>
+
+        <ContentControl
+            x:Name="MediaElement"
+            Grid.Row="0"
+            Grid.RowSpan="2"
+            Content="{Binding MediaElementObject}">
+            <ContentControl.InputBindings>
+                <MouseBinding Command="{Binding MaximizeMinimizeWindowCommand}" MouseAction="LeftDoubleClick"/>
+                <MouseBinding Command="{Binding ShowHideDashboardCommand}" MouseAction="LeftClick"/>
+            </ContentControl.InputBindings>
+        </ContentControl>
+
+        <Grid
+            Grid.Row="1"
+            VerticalAlignment="Bottom"
+            Visibility="{Binding IsDashboardVisible, Converter={StaticResource BooleanToVisibilityConverter}, Mode=TwoWay}">
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Grid.Background>
+                <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                    <GradientStop Offset="0" Color="#00000000"/>
+                    <GradientStop Offset="1" Color="Black"/>
+                    <GradientStop Offset="0.52" Color="#99000000"/>
+                </LinearGradientBrush>
+            </Grid.Background>
+
+            <Slider
+                Grid.Row="0"
+                Margin="10,0"
+                behaviors:SliderDragBehavior.DragCompletedCommand="{Binding PositionDragCompletedCommand}"
+                behaviors:SliderDragBehavior.DragStartedCommand="{Binding PositionDragStartedCommand}"
+                IsSnapToTickEnabled="True"
+                Maximum="{Binding VideoDuration}"
+                Minimum="0"
+                Value="{Binding PositionSliderValue, Mode=TwoWay}"/>
+
+            <StackPanel
+                Grid.Row="1"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Orientation="Horizontal">
+                <ToggleButton
+                    Name="VolumeOffToggleButton"
+                    Width="40"
+                    Height="40"
+                    Margin="10"
+                    HorizontalAlignment="Left"
+                    mdix:ShadowAssist.ShadowDepth="Depth2"
+                    IsChecked="{Binding ElementName=VolumeSlider, Path=Value, Mode=TwoWay, Converter={StaticResource VolumeToBoolConverter}}"
+                    Style="{StaticResource MaterialDesignActionToggleButton}">
+                    <ToggleButton.Content>
+                        <mdix:PackIcon Kind="VolumeHigh"/>
+                    </ToggleButton.Content>
+                    <mdix:ToggleButtonAssist.OnContent>
+                        <mdix:PackIcon Kind="VolumeOff"/>
+                    </mdix:ToggleButtonAssist.OnContent>
+                </ToggleButton>
+
+                <Slider
+                    x:Name="VolumeSlider"
+                    Width="150"
+                    VerticalAlignment="Center"
+                    Maximum="1"
+                    Minimum="0"
+                    Value="{Binding ElementName=MediaElement, Path=Content.Volume, Mode=TwoWay}"/>
+            </StackPanel>
+
+            <StackPanel
+                Grid.Row="1"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Orientation="Horizontal">
+                <Button
+                    Width="40"
+                    Height="40"
+                    HorizontalAlignment="Center"
+                    Command="{Binding ScrollPlaybackCommand}"
+                    CommandParameter="-5"
+                    Style="{StaticResource MaterialDesignFloatingActionButton}">
+                    <mdix:PackIcon Kind="Rewind5"/>
+                </Button>
+
+                <ToggleButton
+                    Width="46"
+                    Height="46"
+                    Margin="10,0"
+                    HorizontalAlignment="Center"
+                    mdix:ShadowAssist.ShadowDepth="Depth2"
+                    IsChecked="{Binding IsPlaying, Mode=TwoWay}"
+                    Style="{StaticResource MaterialDesignActionToggleButton}">
+                    <ToggleButton.Content>
+                        <mdix:PackIcon Kind="Play"/>
+                    </ToggleButton.Content>
+                    <mdix:ToggleButtonAssist.OnContent>
+                        <mdix:PackIcon Kind="Pause"/>
+                    </mdix:ToggleButtonAssist.OnContent>
+                </ToggleButton>
+
+                <Button
+                    Width="40"
+                    Height="40"
+                    HorizontalAlignment="Center"
+                    Command="{Binding ScrollPlaybackCommand}"
+                    CommandParameter="5"
+                    Style="{StaticResource MaterialDesignFloatingActionButton}">
+                    <mdix:PackIcon Kind="FastForward5"/>
+                </Button>
+            </StackPanel>
+
+            <ToggleButton
+                Grid.Row="1"
+                Width="40"
+                Height="40"
+                Margin="10"
+                HorizontalAlignment="Right"
+                mdix:ShadowAssist.ShadowDepth="Depth2"
+                IsChecked="{Binding IsMaximized, Mode=TwoWay}"
+                Style="{StaticResource MaterialDesignActionToggleButton}">
+                <ToggleButton.Content>
+                    <mdix:PackIcon Kind="ArrowExpandAll"/>
+                </ToggleButton.Content>
+                <mdix:ToggleButtonAssist.OnContent>
+                    <mdix:PackIcon Kind="ArrowCollapseAll"/>
+                </mdix:ToggleButtonAssist.OnContent>
+            </ToggleButton>
+        </Grid>
+
+        <Control
+            Grid.Row="0"
+            Grid.RowSpan="2"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Style="{StaticResource BusyAnimationStyle}"
+            Visibility="{Binding IsLoaderVisible, Converter={StaticResource BooleanToVisibilityConverter}, Mode=TwoWay}"/>
+    </Grid>
+</UserControl>

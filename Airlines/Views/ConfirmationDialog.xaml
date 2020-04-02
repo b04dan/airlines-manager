@@ -1,0 +1,63 @@
+﻿<UserControl
+    x:Class="Airlines.Views.ConfirmationDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:Airlines.Views"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:mdix="http://materialdesigninxaml.net/winfx/xaml/themes"
+    xmlns:system="clr-namespace:System;assembly=mscorlib"
+    d:DesignHeight="150"
+    d:DesignWidth="500"
+    mc:Ignorable="d">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/themes/materialdesigntheme.button.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <StackPanel Margin="15">
+            <StackPanel Orientation="Horizontal">
+                <mdix:PackIcon
+                    Width="40"
+                    Height="40"
+                    Margin="0,0,15,0"
+                    VerticalAlignment="Center"
+                    Kind="QuestionMarkCircle"/>
+                <TextBlock
+                    VerticalAlignment="Center"
+                    Style="{DynamicResource MaterialDesignBody1TextBlock}"
+                    Text="{Binding}"/>
+            </StackPanel>
+
+            <StackPanel
+                Margin="0,10,0,0"
+                HorizontalAlignment="Center"
+                Orientation="Horizontal">
+                <Button
+                    Width="100"
+                    Margin="0,0,30,0"
+                    Command="{x:Static mdix:DialogHost.CloseDialogCommand}"
+                    Content="Да"
+                    Style="{DynamicResource MaterialDesignOutlinedButton}">
+                    <Button.CommandParameter>
+                        <system:Boolean>True</system:Boolean>
+                    </Button.CommandParameter>
+                </Button>
+
+                <Button
+                    Width="100"
+                    Command="{x:Static mdix:DialogHost.CloseDialogCommand}"
+                    Content="Нет"
+                    Style="{DynamicResource MaterialDesignOutlinedButton}">
+                    <Button.CommandParameter>
+                        <system:Boolean>False</system:Boolean>
+                    </Button.CommandParameter>
+                </Button>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</UserControl>

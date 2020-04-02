@@ -1,0 +1,638 @@
+﻿<UserControl
+    x:Class="Airlines.Views.AirplaneEditDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="clr-namespace:Airlines.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:Airlines.Views"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:mdix="http://materialdesigninxaml.net/winfx/xaml/themes"
+    xmlns:system="clr-namespace:System;assembly=mscorlib"
+    xmlns:utils="clr-namespace:Airlines.Utils"
+    d:DesignHeight="580"
+    d:DesignWidth="800"
+    mc:Ignorable="d">
+    <UserControl.Resources>
+        <converters:InverseAndBooleansToBooleanConverter x:Key="InverseAndBooleansToBooleanConverter"/>
+
+        <!-- Стиль для всех TextBox'ов -->
+        <Style BasedOn="{StaticResource MaterialDesignFloatingHintTextBox}" TargetType="TextBox">
+            <Style.Triggers>
+                <!-- Отображение ошибки в ToolTip -->
+                <Trigger Property="Validation.HasError" Value="true">
+                    <Setter Property="ToolTip" Value="{Binding RelativeSource={RelativeSource Self}, Path=(Validation.Errors)[0].ErrorContent}"/>
+                </Trigger>
+            </Style.Triggers>
+
+            <!-- Вывод ошибки в Popup'е -->
+            <Setter Property="Validation.ErrorTemplate">
+                <Setter.Value>
+                    <ControlTemplate>
+                        <Grid x:Name="PopupGrid">
+                            <AdornedElementPlaceholder x:Name="Placeholder"/>
+                            <Popup
+                                HorizontalAlignment="Right"
+                                AllowsTransparency="True"
+                                HorizontalOffset="0"
+                                IsOpen="{Binding ElementName=Placeholder, Path=AdornedElement.IsFocused, Mode=OneWay}"
+                                Placement="Right"
+                                PlacementTarget="{Binding ElementName=PopupGrid}"
+                                PopupAnimation="Fade"
+                                VerticalOffset="6">
+                                <StackPanel Orientation="Horizontal">
+                                    <Polygon
+                                        x:Name="Polygon"
+                                        VerticalAlignment="Center"
+                                        Fill="#FFC31D1D"
+                                        Points="0,4 4,0 4,8"
+                                        Stretch="Fill"
+                                        Stroke="#FFC31D1D"
+                                        StrokeThickness="2"/>
+                                    <Border
+                                        Padding="4"
+                                        Background="#FFC31D1D"
+                                        CornerRadius="4">
+                                        <TextBlock
+                                            Margin="2,0,0,0"
+                                            HorizontalAlignment="Center"
+                                            FontWeight="Bold"
+                                            Foreground="White"
+                                            Text="{Binding ElementName=Placeholder, Path=AdornedElement.ToolTip, Mode=OneWay}"/>
+                                    </Border>
+                                </StackPanel>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="FontSize" Value="14"/>
+        </Style>
+
+        <!-- Стиль для заголовков -->
+        <Style
+            x:Key="HeaderTextBoxStyle"
+            BasedOn="{StaticResource MaterialDesignHeadline6TextBlock}"
+            TargetType="TextBlock">
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,10,0,3"/>
+        </Style>
+
+        <!-- Стиль карточек -->
+        <Style TargetType="mdix:Card">
+            <Style.Triggers>
+                <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                    <Setter Property="mdix:ShadowAssist.ShadowDepth" Value="Depth4"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style BasedOn="{StaticResource MaterialDesignDarkSeparator}" TargetType="Separator">
+            <Setter Property="Height" Value="10"/>
+        </Style>
+    </UserControl.Resources>
+
+    <!-- AdornerDecorator необходим, чтобы отображались PopUp'ы -->
+    <AdornerDecorator>
+        <Grid Width="800" Height="580">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="120"/>
+                <RowDefinition Height="350"/>
+                <RowDefinition Height="64"/>
+            </Grid.RowDefinitions>
+
+            <!-- Верхняя панель -->
+            <mdix:ColorZone Padding="6" Mode="Accent">
+                <StackPanel Orientation="Horizontal">
+                    <Button
+                        HorizontalAlignment="Left"
+                        Command="{x:Static mdix:DialogHost.CloseDialogCommand}"
+                        Style="{StaticResource MaterialDesignToolForegroundButton}">
+                        <mdix:PackIcon HorizontalAlignment="Right" Kind="ArrowLeft"/>
+
+                        <Button.CommandParameter>
+                            <utils:EditDialogResult>Cancel</utils:EditDialogResult>
+                        </Button.CommandParameter>
+                    </Button>
+
+                    <TextBlock
+                        Margin="8,0,0,0"
+                        VerticalAlignment="Center"
+                        Text="РЕДАКТОР ИНФОРМАЦИИ О САМОЛЕТЕ"/>
+                </StackPanel>
+            </mdix:ColorZone>
+
+            <!-- Карточки "Фото" и "Видео" -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+
+                <Grid.Resources>
+                    <Style BasedOn="{StaticResource MaterialDesignIconForegroundButton}" TargetType="Button">
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource PrimaryHueMidBrush}"/>
+                            </Trigger>
+                        </Style.Triggers>
+
+                        <Setter Property="Foreground" Value="#89000000"/>
+                    </Style>
+                </Grid.Resources>
+
+                <!-- Карточка "Фото" -->
+                <mdix:Card Grid.Column="0" Margin="10">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock
+                            Grid.Row="0"
+                            Grid.Column="0"
+                            Style="{StaticResource HeaderTextBoxStyle}"
+                            Text="ФОТО"/>
+
+                        <Separator Grid.Row="1" Grid.Column="0"/>
+
+                        <Grid
+                            Grid.Column="0"
+                            Margin="10,0,5,0"
+                            VerticalAlignment="Top"
+                            Row="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="25"/>
+                                <ColumnDefinition/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <mdix:PackIcon
+                                VerticalAlignment="Center"
+                                Foreground="{Binding ElementName=PhotoFileNameTextBox, Path=BorderBrush}"
+                                Kind="FolderOpen"/>
+
+                            <TextBox
+                                x:Name="PhotoFileNameTextBox"
+                                Grid.Column="1"
+                                Height="37"
+                                mdix:HintAssist.Hint="Название файла"
+                                IsReadOnly="True"
+                                Text="{Binding Airplane.PhotoFileName, TargetNullValue=Фото нет}"/>
+
+                            <Button
+                                Grid.Column="2"
+                                Width="40"
+                                Height="40"
+                                Command="{Binding SelectNewAirplanePhotoCommand}"
+                                ToolTip="Выбрать другое фото">
+                                <mdix:PackIcon Kind="FolderEdit"/>
+                            </Button>
+
+                            <Button
+                                Grid.Column="3"
+                                Width="40"
+                                Height="40"
+                                Command="{Binding ShowAirplanePhotoWindowCommand}"
+                                ToolTip="Открыть фото в новом окне">
+                                <mdix:PackIcon Height="20" Kind="OpenInNew"/>
+                            </Button>
+                        </Grid>
+                    </Grid>
+                </mdix:Card>
+
+                <!-- Карточка "Видео" -->
+                <mdix:Card Grid.Column="1" Margin="10">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+
+                        <Grid
+                            Margin="10,0,5,0"
+                            VerticalAlignment="Top"
+                            Row="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="25"/>
+                                <ColumnDefinition/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <mdix:PackIcon
+                                VerticalAlignment="Center"
+                                Foreground="{Binding ElementName=VideoFileNameTextBox, Path=BorderBrush}"
+                                Kind="FolderOpen"/>
+
+                            <TextBox
+                                x:Name="VideoFileNameTextBox"
+                                Grid.Column="1"
+                                Height="37"
+                                mdix:HintAssist.Hint="Название файла"
+                                IsReadOnly="True"
+                                Text="{Binding Airplane.VideoFileName, TargetNullValue=Видео нет}"/>
+
+                            <Button
+                                Grid.Column="2"
+                                Width="40"
+                                Height="40"
+                                Command="{Binding SelectAirplaneNewAirplaneVideoCommand}"
+                                ToolTip="Выбрать другое видео">
+                                <mdix:PackIcon Kind="FolderEdit"/>
+                            </Button>
+
+                            <Button
+                                Grid.Column="3"
+                                Width="40"
+                                Height="40"
+                                Command="{Binding ShowAirplaneVideoWindowCommand}"
+                                ToolTip="Открыть видео в плеере">
+                                <mdix:PackIcon Height="20" Kind="OpenInNew"/>
+                            </Button>
+                        </Grid>
+
+                        <TextBlock
+                            Grid.Row="0"
+                            Style="{StaticResource HeaderTextBoxStyle}"
+                            Text="ВИДЕО"/>
+
+                        <Separator Grid.Row="1"/>
+                    </Grid>
+                </mdix:Card>
+            </Grid>
+
+            <!-- Карточки "Самолет", "Характеристики" и "Размеры" -->
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Карточка "Самолет" -->
+                <mdix:Card Grid.Column="0" Margin="10">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="255"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock
+                            Grid.Column="0"
+                            Style="{StaticResource HeaderTextBoxStyle}"
+                            Text="САМОЛЕТ"/>
+
+                        <Separator Grid.Row="1" Grid.Column="0"/>
+
+                        <StackPanel
+                            Grid.Row="2"
+                            Grid.Column="0"
+                            Margin="15,0"
+                            VerticalAlignment="Top">
+
+                            <Grid Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="25"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+
+                                <mdix:PackIcon
+                                    VerticalAlignment="Center"
+                                    Foreground="{Binding ElementName=NameTextBox, Path=BorderBrush}"
+                                    Kind="Airplane"/>
+                                <TextBox
+                                    x:Name="NameTextBox"
+                                    Grid.Column="1"
+                                    mdix:HintAssist.Hint="Модель самолета"
+                                    Text="{Binding Airplane.Name, ValidatesOnDataErrors=True, UpdateSourceTrigger=PropertyChanged}"/>
+                            </Grid>
+
+                            <Grid Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="25"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+
+                                <mdix:PackIcon
+                                    VerticalAlignment="Center"
+                                    Foreground="{Binding ElementName=RegNumberTextBox, Path=BorderBrush}"
+                                    Kind="Identifier"/>
+                                <TextBox
+                                    x:Name="RegNumberTextBox"
+                                    Grid.Column="1"
+                                    mdix:HintAssist.Hint="Номер самолета"
+                                    Text="{Binding Airplane.RegNumber, ValidatesOnDataErrors=True, UpdateSourceTrigger=PropertyChanged}"/>
+                            </Grid>
+
+                            <Grid Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="25"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+
+                                <mdix:PackIcon
+                                    VerticalAlignment="Center"
+                                    Foreground="{Binding ElementName=PriceTextBox, Path=BorderBrush}"
+                                    Kind="CashMultiple"/>
+                                <TextBox
+                                    x:Name="PriceTextBox"
+                                    Grid.Column="1"
+                                    mdix:HintAssist.Hint="Стоимость самолета"
+                                    mdix:TextFieldAssist.SuffixText="$"
+                                    Text="{Binding Airplane.Price, ValidatesOnDataErrors=True, UpdateSourceTrigger=PropertyChanged}"/>
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
+                </mdix:Card>
+
+                <!-- Карточка "Характеристики" -->
+                <mdix:Card Grid.Column="1" Margin="10">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock
+                            Grid.Row="0"
+                            Style="{StaticResource HeaderTextBoxStyle}"
+                            Text="ХАРАКТЕРИСТИКИ"/>
+
+                        <Separator Grid.Row="1"/>
+
+                        <StackPanel
+                            Grid.Row="2"
+                            Margin="15,0"
+                            VerticalAlignment="Top">
+
+                            <Grid Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="25"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+
+                                <mdix:PackIcon
+                                    VerticalAlignment="Center"
+                                    Foreground="{Binding ElementName=MaxPassengersCountTextBox, Path=BorderBrush}"
+                                    Kind="SeatPassenger"/>
+                                <TextBox
+                                    x:Name="MaxPassengersCountTextBox"
+                                    Grid.Column="1"
+                                    mdix:HintAssist.Hint="Максимум пассажиров"
+                                    mdix:TextFieldAssist.SuffixText="чел"
+                                    Text="{Binding Airplane.MaxPassengersCount, ValidatesOnDataErrors=True, UpdateSourceTrigger=PropertyChanged}"/>
+                            </Grid>
+
+                            <Grid Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="25"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+
+                                <mdix:PackIcon
+                                    VerticalAlignment="Center"
+                                    Foreground="{Binding ElementName=MaxTakeoffWeightTextBox, Path=BorderBrush}"
+                                    Kind="Weight"/>
+                                <TextBox
+                                    x:Name="MaxTakeoffWeightTextBox"
+                                    Grid.Column="1"
+                                    mdix:HintAssist.Hint="Максимальный вес"
+                                    mdix:TextFieldAssist.SuffixText="кг"
+                                    Text="{Binding Airplane.MaxTakeoffWeight, ValidatesOnDataErrors=True, UpdateSourceTrigger=PropertyChanged}"/>
+                            </Grid>
+
+                            <Grid Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="25"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+
+                                <mdix:PackIcon
+                                    VerticalAlignment="Center"
+                                    Foreground="{Binding ElementName=MaxFlightHeightTextBox, Path=BorderBrush}"
+                                    Kind="ArrowCompass"/>
+                                <TextBox
+                                    x:Name="MaxFlightHeightTextBox"
+                                    Grid.Column="1"
+                                    mdix:HintAssist.Hint="Максимальная высота"
+                                    mdix:TextFieldAssist.SuffixText="м"
+                                    Text="{Binding Airplane.MaxFlightHeight, ValidatesOnDataErrors=True, UpdateSourceTrigger=PropertyChanged}"/>
+                            </Grid>
+
+                            <Grid Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="25"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+
+                                <mdix:PackIcon
+                                    VerticalAlignment="Center"
+                                    Foreground="{Binding ElementName=CruisingSpeedTextBox, Path=BorderBrush}"
+                                    Kind="Speedometer"/>
+                                <TextBox
+                                    x:Name="CruisingSpeedTextBox"
+                                    Grid.Column="1"
+                                    mdix:HintAssist.Hint="Крейсерская скорость"
+                                    mdix:TextFieldAssist.SuffixText="км/ч"
+                                    Text="{Binding Airplane.CruisingSpeed, ValidatesOnDataErrors=True, UpdateSourceTrigger=PropertyChanged}"/>
+                            </Grid>
+
+                            <Grid Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="25"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+
+                                <mdix:PackIcon
+                                    VerticalAlignment="Center"
+                                    Foreground="{Binding ElementName=FuelConsumptionTextBox, Path=BorderBrush}"
+                                    Kind="Fuel"/>
+                                <TextBox
+                                    x:Name="FuelConsumptionTextBox"
+                                    Grid.Column="1"
+                                    mdix:HintAssist.Hint="Часовой расход топлива"
+                                    mdix:TextFieldAssist.SuffixText="л"
+                                    Text="{Binding Airplane.FuelConsumption, ValidatesOnDataErrors=True, UpdateSourceTrigger=PropertyChanged}"/>
+                            </Grid>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="25"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+
+                                <mdix:PackIcon
+                                    VerticalAlignment="Center"
+                                    Foreground="{Binding ElementName=FlightRangeTextBox, Path=BorderBrush}"
+                                    Kind="RayStartArrow"/>
+                                <TextBox
+                                    x:Name="FlightRangeTextBox"
+                                    Grid.Column="1"
+                                    mdix:HintAssist.Hint="Дальность полета"
+                                    mdix:TextFieldAssist.SuffixText="м"
+                                    Text="{Binding Airplane.FlightRange, ValidatesOnDataErrors=True, UpdateSourceTrigger=PropertyChanged}"/>
+                            </Grid>
+
+                        </StackPanel>
+                    </Grid>
+                </mdix:Card>
+
+                <!-- Карточка "Размеры" -->
+                <mdix:Card Grid.Column="2" Margin="10">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="255"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock
+                            Grid.Row="0"
+                            Style="{StaticResource HeaderTextBoxStyle}"
+                            Text="РАЗМЕРЫ"/>
+                        <Separator Grid.Row="1"/>
+
+                        <StackPanel
+                            Grid.Row="2"
+                            Margin="15,0"
+                            VerticalAlignment="Top">
+
+                            <Grid Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="25"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+
+                                <mdix:PackIcon
+                                    VerticalAlignment="Center"
+                                    Foreground="{Binding ElementName=LengthTextBox, Path=BorderBrush}"
+                                    Kind="AxisYArrow"/>
+                                <TextBox
+                                    x:Name="LengthTextBox"
+                                    Grid.Column="1"
+                                    mdix:HintAssist.Hint="Длина корпуса"
+                                    mdix:TextFieldAssist.SuffixText="м"
+                                    Text="{Binding Airplane.Length, ValidatesOnDataErrors=True, UpdateSourceTrigger=PropertyChanged}"/>
+                            </Grid>
+
+                            <Grid Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="25"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+
+                                <mdix:PackIcon
+                                    VerticalAlignment="Center"
+                                    Foreground="{Binding ElementName=HeightTextBox, Path=BorderBrush}"
+                                    Kind="AxisZArrow"/>
+                                <TextBox
+                                    x:Name="HeightTextBox"
+                                    Grid.Column="1"
+                                    mdix:HintAssist.Hint="Высота корпуса"
+                                    mdix:TextFieldAssist.SuffixText="м"
+                                    Text="{Binding Airplane.Height, ValidatesOnDataErrors=True, UpdateSourceTrigger=PropertyChanged}"/>
+                            </Grid>
+
+                            <Grid Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="25"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+
+                                <mdix:PackIcon
+                                    VerticalAlignment="Center"
+                                    Foreground="{Binding ElementName=WingspanTextBox, Path=BorderBrush}"
+                                    Kind="AxisXArrow"/>
+                                <TextBox
+                                    x:Name="WingspanTextBox"
+                                    Grid.Column="1"
+                                    mdix:HintAssist.Hint="Размах крыльев"
+                                    mdix:TextFieldAssist.SuffixText="м"
+                                    Text="{Binding Airplane.Wingspan, ValidatesOnDataErrors=True, UpdateSourceTrigger=PropertyChanged}"/>
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
+                </mdix:Card>
+            </Grid>
+
+            <!-- Кнопки "Сохранить", "Удалить" и "Отмена" -->
+            <Grid Grid.Row="3">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+
+                <Grid.Resources>
+                    <Style BasedOn="{StaticResource MaterialDesignRaisedAccentButton}" TargetType="Button">
+                        <Setter Property="Margin" Value="10"/>
+                        <Setter Property="Height" Value="44"/>
+                        <Setter Property="mdix:ShadowAssist.ShadowDepth" Value="Depth3"/>
+                        <Setter Property="VerticalAlignment" Value="Top"/>
+                    </Style>
+                </Grid.Resources>
+
+                <!-- Кнопка "Сохранить" -->
+                <Button Command="{x:Static mdix:DialogHost.CloseDialogCommand}">
+                    <StackPanel Orientation="Horizontal">
+                        <mdix:PackIcon VerticalAlignment="Center" Kind="ContentSave"/>
+                        <TextBlock Margin="5,0,0,0" Text="СОХРАНИТЬ"/>
+                    </StackPanel>
+
+                    <Button.CommandParameter>
+                        <utils:EditDialogResult>Save</utils:EditDialogResult>
+                    </Button.CommandParameter>
+
+                    <!-- Кнопка включена, только когда ни в одном из TextBox'ов нет ошибок -->
+                    <Button.IsEnabled>
+                        <MultiBinding Converter="{StaticResource InverseAndBooleansToBooleanConverter}" Mode="TwoWay">
+                            <Binding ElementName="NameTextBox" Path="(Validation.HasError)"/>
+                            <Binding ElementName="RegNumberTextBox" Path="(Validation.HasError)"/>
+                            <Binding ElementName="PriceTextBox" Path="(Validation.HasError)"/>
+                            <Binding ElementName="MaxPassengersCountTextBox" Path="(Validation.HasError)"/>
+                            <Binding ElementName="MaxTakeoffWeightTextBox" Path="(Validation.HasError)"/>
+                            <Binding ElementName="MaxFlightHeightTextBox" Path="(Validation.HasError)"/>
+                            <Binding ElementName="CruisingSpeedTextBox" Path="(Validation.HasError)"/>
+                            <Binding ElementName="FuelConsumptionTextBox" Path="(Validation.HasError)"/>
+                            <Binding ElementName="FlightRangeTextBox" Path="(Validation.HasError)"/>
+                            <Binding ElementName="LengthTextBox" Path="(Validation.HasError)"/>
+                            <Binding ElementName="HeightTextBox" Path="(Validation.HasError)"/>
+                            <Binding ElementName="WingspanTextBox" Path="(Validation.HasError)"/>
+                        </MultiBinding>
+                    </Button.IsEnabled>
+                </Button>
+
+                <!-- Кнопка "Удалить" -->
+                <Button Grid.Column="1" Command="{x:Static mdix:DialogHost.CloseDialogCommand}">
+                    <StackPanel Orientation="Horizontal">
+                        <mdix:PackIcon VerticalAlignment="Center" Kind="CloseCircle"/>
+                        <TextBlock Margin="5,0,0,0" Text="УДАЛИТЬ"/>
+                    </StackPanel>
+
+                    <Button.CommandParameter>
+                        <utils:EditDialogResult>Remove</utils:EditDialogResult>
+                    </Button.CommandParameter>
+                </Button>
+
+                <!-- Кнопка "Отмена" -->
+                <Button Grid.Column="2" Command="{x:Static mdix:DialogHost.CloseDialogCommand}">
+                    <StackPanel Orientation="Horizontal">
+                        <mdix:PackIcon VerticalAlignment="Center" Kind="ArrowBackCircle"/>
+                        <TextBlock Margin="5,0,0,0" Text="ОТМЕНИТЬ"/>
+                    </StackPanel>
+
+                    <Button.CommandParameter>
+                        <utils:EditDialogResult>Cancel</utils:EditDialogResult>
+                    </Button.CommandParameter>
+                </Button>
+            </Grid>
+        </Grid>
+    </AdornerDecorator>
+</UserControl>

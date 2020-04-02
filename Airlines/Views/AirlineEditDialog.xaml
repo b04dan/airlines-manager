@@ -1,0 +1,463 @@
+﻿<UserControl
+    x:Class="Airlines.Views.AirlineEditDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="clr-namespace:Airlines.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:Airlines.Views"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:mdix="http://materialdesigninxaml.net/winfx/xaml/themes"
+    xmlns:system="clr-namespace:System;assembly=mscorlib"
+    xmlns:utils="clr-namespace:Airlines.Utils"
+    d:DesignHeight="580"
+    d:DesignWidth="800"
+    mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <converters:InverseAndBooleansToBooleanConverter x:Key="InverseAndBooleansToBooleanConverter"/>
+
+        <!-- Стиль для всех TextBox'ов -->
+        <Style BasedOn="{StaticResource MaterialDesignFloatingHintTextBox}" TargetType="TextBox">
+            <Style.Triggers>
+                <!-- Отображение ошибки в ToolTip -->
+                <Trigger Property="Validation.HasError" Value="true">
+                    <Setter Property="ToolTip" Value="{Binding RelativeSource={RelativeSource Self}, Path=(Validation.Errors)[0].ErrorContent}"/>
+                </Trigger>
+            </Style.Triggers>
+
+            <!-- Вывод ошибки в Popup'е -->
+            <Setter Property="Validation.ErrorTemplate">
+                <Setter.Value>
+                    <ControlTemplate>
+                        <Grid x:Name="PopupGrid">
+                            <AdornedElementPlaceholder x:Name="Placeholder"/>
+                            <Popup
+                                HorizontalAlignment="Right"
+                                AllowsTransparency="True"
+                                HorizontalOffset="0"
+                                IsOpen="{Binding ElementName=Placeholder, Path=AdornedElement.IsFocused, Mode=OneWay}"
+                                Placement="Right"
+                                PlacementTarget="{Binding ElementName=PopupGrid}"
+                                PopupAnimation="Fade"
+                                VerticalOffset="6">
+                                <StackPanel Orientation="Horizontal">
+                                    <Polygon
+                                        x:Name="Polygon"
+                                        VerticalAlignment="Center"
+                                        Fill="#FFC31D1D"
+                                        Points="0,4 4,0 4,8"
+                                        Stretch="Fill"
+                                        Stroke="#FFC31D1D"
+                                        StrokeThickness="2"/>
+                                    <Border
+                                        Padding="4"
+                                        Background="#FFC31D1D"
+                                        CornerRadius="4">
+                                        <TextBlock
+                                            Margin="2,0,0,0"
+                                            HorizontalAlignment="Center"
+                                            FontWeight="Bold"
+                                            Foreground="White"
+                                            Text="{Binding ElementName=Placeholder, Path=AdornedElement.ToolTip, Mode=OneWay}"/>
+                                    </Border>
+                                </StackPanel>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="FontSize" Value="16"/>
+        </Style>
+
+        <!-- Стиль для заголовков -->
+        <Style
+            x:Key="HeaderTextBoxStyle"
+            BasedOn="{StaticResource MaterialDesignHeadline6TextBlock}"
+            TargetType="TextBlock">
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,10,0,3"/>
+        </Style>
+
+        <!-- Стиль для резделителей -->
+        <Style BasedOn="{StaticResource MaterialDesignDarkSeparator}" TargetType="Separator">
+            <Setter Property="Height" Value="10"/>
+        </Style>
+
+        <!-- Стиль карточек -->
+        <Style TargetType="mdix:Card">
+            <Style.Triggers>
+                <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                    <Setter Property="mdix:ShadowAssist.ShadowDepth" Value="Depth4"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <AdornerDecorator>
+        <Grid Width="800" Height="580">
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="470"/>
+                <RowDefinition Height="64"/>
+            </Grid.RowDefinitions>
+
+            <mdix:ColorZone Padding="6" Mode="Accent">
+                <StackPanel Orientation="Horizontal">
+                    <Button
+                        HorizontalAlignment="Left"
+                        Command="{x:Static mdix:DialogHost.CloseDialogCommand}"
+                        Style="{StaticResource MaterialDesignToolForegroundButton}">
+                        <mdix:PackIcon HorizontalAlignment="Right" Kind="ArrowLeft"/>
+                    </Button>
+
+                    <TextBlock
+                        Margin="8,0,0,0"
+                        VerticalAlignment="Center"
+                        Text="РЕДАКТОР ИНФОРМАЦИИ О АВИАКОМПАНИИ"/>
+                </StackPanel>
+            </mdix:ColorZone>
+
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="5*"/>
+                    <ColumnDefinition Width="3*"/>
+                </Grid.ColumnDefinitions>
+
+                <Grid Grid.Column="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <mdix:Card Margin="10">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Style="{StaticResource HeaderTextBoxStyle}" Text="АВИАКОМПАНИЯ"/>
+
+                            <Separator
+                                Grid.Row="1"
+                                Height="10"
+                                Style="{StaticResource MaterialDesignDarkSeparator}"/>
+
+                            <StackPanel
+                                Grid.Row="2"
+                                Margin="15,0"
+                                VerticalAlignment="Top">
+
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="25"/>
+                                        <ColumnDefinition/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <mdix:PackIcon
+                                        VerticalAlignment="Center"
+                                        Foreground="{Binding ElementName=TitleTextBox, Path=BorderBrush}"
+                                        Kind="FormatTitle"/>
+                                    <TextBox
+                                        x:Name="TitleTextBox"
+                                        Grid.Column="1"
+                                        mdix:HintAssist.Hint="Название компании"
+                                        FontSize="20"
+                                        Text="{Binding Airline.Title, ValidatesOnDataErrors=True, UpdateSourceTrigger=PropertyChanged}"/>
+                                </Grid>
+
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="25"/>
+                                        <ColumnDefinition/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <mdix:PackIcon
+                                        VerticalAlignment="Center"
+                                        Foreground="{Binding ElementName=AddressTextBox, Path=BorderBrush}"
+                                        Kind="Home"/>
+                                    <TextBox
+                                        x:Name="AddressTextBox"
+                                        Grid.Column="1"
+                                        mdix:HintAssist.Hint="Адрес"
+                                        FontSize="16"
+                                        Text="{Binding Airline.Address, ValidatesOnDataErrors=True, UpdateSourceTrigger=PropertyChanged}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Grid>
+                    </mdix:Card>
+
+                    <mdix:Card Grid.Row="1" Margin="10">
+                        <TextBox
+                            Margin="5"
+                            mdix:HintAssist.Hint="О компании"
+                            AcceptsReturn="True"
+                            FontSize="18"
+                            Style="{StaticResource MaterialDesignOutlinedTextFieldTextBox}"
+                            Text="{Binding Airline.Description}"
+                            TextWrapping="Wrap"
+                            VerticalScrollBarVisibility="Auto"/>
+                    </mdix:Card>
+                </Grid>
+
+                <Grid Grid.Column="1">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="120"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid.Resources>
+                        <Style BasedOn="{StaticResource MaterialDesignIconForegroundButton}" TargetType="Button">
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Foreground" Value="{StaticResource PrimaryHueMidBrush}"/>
+                                </Trigger>
+                            </Style.Triggers>
+
+                            <Setter Property="Foreground" Value="#89000000"/>
+                        </Style>
+                    </Grid.Resources>
+
+                    <!-- Карточка "Фото" -->
+                    <mdix:Card Grid.Row="0" Margin="10">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock
+                                Grid.Row="0"
+                                Grid.Column="0"
+                                Style="{StaticResource HeaderTextBoxStyle}"
+                                Text="ФОТО"/>
+
+                            <Separator Grid.Row="1"/>
+
+                            <Grid
+                                Grid.Column="0"
+                                Margin="10,0,5,0"
+                                VerticalAlignment="Top"
+                                Row="2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="25"/>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <mdix:PackIcon
+                                    VerticalAlignment="Center"
+                                    Foreground="{Binding ElementName=PhotoFileNameTextBox, Path=BorderBrush}"
+                                    Kind="FolderOpen"/>
+
+                                <TextBox
+                                    x:Name="PhotoFileNameTextBox"
+                                    Grid.Column="1"
+                                    mdix:HintAssist.Hint="Название файла"
+                                    IsReadOnly="True"
+                                    Text="{Binding Airline.Manager.PhotoFileName, TargetNullValue=Фото нет}"/>
+
+                                <Button
+                                    Grid.Column="2"
+                                    Width="40"
+                                    Height="40"
+                                    Command="{Binding SelectNewManagerPhotoCommand}"
+                                    ToolTip="Выбрать другое фото">
+                                    <mdix:PackIcon Kind="FolderEdit"/>
+                                </Button>
+
+                                <Button
+                                    Grid.Column="3"
+                                    Width="40"
+                                    Height="40"
+                                    Command="{Binding ShowManagerPhotoWindowCommand}"
+                                    ToolTip="Открыть фото в новом окне">
+                                    <mdix:PackIcon Height="20" Kind="OpenInNew"/>
+                                </Button>
+                            </Grid>
+                        </Grid>
+                    </mdix:Card>
+
+                    <mdix:Card Grid.Row="1" Margin="10">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Style="{StaticResource HeaderTextBoxStyle}" Text="ДИРЕКТОР"/>
+
+                            <Separator
+                                Grid.Row="1"
+                                Height="10"
+                                Style="{StaticResource MaterialDesignDarkSeparator}"/>
+
+                            <StackPanel
+                                Grid.Row="2"
+                                Margin="15,0"
+                                VerticalAlignment="Top">
+
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="25"/>
+                                        <ColumnDefinition/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <mdix:PackIcon
+                                        VerticalAlignment="Center"
+                                        Foreground="{Binding ElementName=SurnameTextBox, Path=BorderBrush}"
+                                        Kind="Person"/>
+                                    <TextBox
+                                        x:Name="SurnameTextBox"
+                                        Grid.Column="1"
+                                        mdix:HintAssist.Hint="Фамилия"
+                                        Text="{Binding Airline.Manager.Surname, ValidatesOnDataErrors=True, UpdateSourceTrigger=PropertyChanged}"/>
+                                </Grid>
+
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="25"/>
+                                        <ColumnDefinition/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <mdix:PackIcon
+                                        VerticalAlignment="Center"
+                                        Foreground="{Binding ElementName=NameTextBox, Path=BorderBrush}"
+                                        Kind="Person"/>
+                                    <TextBox
+                                        x:Name="NameTextBox"
+                                        Grid.Column="1"
+                                        mdix:HintAssist.Hint="Имя"
+                                        Text="{Binding Airline.Manager.Name, ValidatesOnDataErrors=True, UpdateSourceTrigger=PropertyChanged}"/>
+                                </Grid>
+
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="25"/>
+                                        <ColumnDefinition/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <mdix:PackIcon
+                                        VerticalAlignment="Center"
+                                        Foreground="{Binding ElementName=PatronymicTextBox, Path=BorderBrush}"
+                                        Kind="Person"/>
+                                    <TextBox
+                                        x:Name="PatronymicTextBox"
+                                        Grid.Column="1"
+                                        mdix:HintAssist.Hint="Отчество"
+                                        Text="{Binding Airline.Manager.Patronymic, ValidatesOnDataErrors=True, UpdateSourceTrigger=PropertyChanged}"/>
+                                </Grid>
+
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="25"/>
+                                        <ColumnDefinition/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <mdix:PackIcon
+                                        VerticalAlignment="Center"
+                                        Foreground="{Binding ElementName=EmailTextBox, Path=BorderBrush}"
+                                        Kind="Email"/>
+                                    <TextBox
+                                        x:Name="EmailTextBox"
+                                        Grid.Column="1"
+                                        mdix:HintAssist.Hint="E-mail"
+                                        Text="{Binding Airline.Manager.Email, ValidatesOnDataErrors=True, UpdateSourceTrigger=PropertyChanged}"/>
+                                </Grid>
+
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="25"/>
+                                        <ColumnDefinition/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <mdix:PackIcon
+                                        VerticalAlignment="Center"
+                                        Foreground="{Binding ElementName=PhoneNumberTextBox, Path=BorderBrush}"
+                                        Kind="Phone"/>
+                                    <TextBox
+                                        x:Name="PhoneNumberTextBox"
+                                        Grid.Column="1"
+                                        mdix:HintAssist.Hint="Номер телефона"
+                                        Text="{Binding Airline.Manager.PhoneNumber, ValidatesOnDataErrors=True, UpdateSourceTrigger=PropertyChanged}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Grid>
+                    </mdix:Card>
+                </Grid>
+            </Grid>
+
+            <!-- Кнопки "Сохранить", "Удалить" и "Отмена" -->
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+
+                <Grid.Resources>
+                    <Style BasedOn="{StaticResource MaterialDesignRaisedAccentButton}" TargetType="Button">
+                        <Setter Property="Margin" Value="10"/>
+                        <Setter Property="Height" Value="44"/>
+                        <Setter Property="mdix:ShadowAssist.ShadowDepth" Value="Depth3"/>
+                        <Setter Property="VerticalAlignment" Value="Top"/>
+                    </Style>
+                </Grid.Resources>
+
+                <!-- Кнопка "Сохранить" -->
+                <Button Command="{x:Static mdix:DialogHost.CloseDialogCommand}">
+                    <StackPanel Orientation="Horizontal">
+                        <mdix:PackIcon VerticalAlignment="Center" Kind="ContentSave"/>
+                        <TextBlock Margin="5,0,0,0" Text="СОХРАНИТЬ"/>
+                    </StackPanel>
+
+                    <Button.CommandParameter>
+                        <utils:EditDialogResult>Save</utils:EditDialogResult>
+                    </Button.CommandParameter>
+
+                    <!-- Кнопка включена, только когда ни в одном из TextBox'ов нет ошибок -->
+                    <Button.IsEnabled>
+                        <MultiBinding Converter="{StaticResource InverseAndBooleansToBooleanConverter}" Mode="TwoWay">
+                            <Binding ElementName="SurnameTextBox" Path="(Validation.HasError)"/>
+                            <Binding ElementName="NameTextBox" Path="(Validation.HasError)"/>
+                            <Binding ElementName="PatronymicTextBox" Path="(Validation.HasError)"/>
+                            <Binding ElementName="EmailTextBox" Path="(Validation.HasError)"/>
+                            <Binding ElementName="PhoneNumberTextBox" Path="(Validation.HasError)"/>
+                            <Binding ElementName="TitleTextBox" Path="(Validation.HasError)"/>
+                            <Binding ElementName="AddressTextBox" Path="(Validation.HasError)"/>
+                        </MultiBinding>
+                    </Button.IsEnabled>
+                </Button>
+
+                <!-- Кнопка "Удалить" -->
+                <Button Grid.Column="1" Command="{x:Static mdix:DialogHost.CloseDialogCommand}">
+                    <StackPanel Orientation="Horizontal">
+                        <mdix:PackIcon VerticalAlignment="Center" Kind="CloseCircle"/>
+                        <TextBlock Margin="5,0,0,0" Text="УДАЛИТЬ"/>
+                    </StackPanel>
+
+                    <Button.CommandParameter>
+                        <utils:EditDialogResult>Remove</utils:EditDialogResult>
+                    </Button.CommandParameter>
+                </Button>
+
+                <!-- Кнопка "Отмена" -->
+                <Button Grid.Column="2" Command="{x:Static mdix:DialogHost.CloseDialogCommand}">
+                    <StackPanel Orientation="Horizontal">
+                        <mdix:PackIcon VerticalAlignment="Center" Kind="ArrowBackCircle"/>
+                        <TextBlock Margin="5,0,0,0" Text="ОТМЕНИТЬ"/>
+                    </StackPanel>
+
+                    <Button.CommandParameter>
+                        <utils:EditDialogResult>Cancel</utils:EditDialogResult>
+                    </Button.CommandParameter>
+                </Button>
+            </Grid>
+        </Grid>
+    </AdornerDecorator>
+</UserControl>
